@@ -10,7 +10,7 @@ For Samdesk
 
 
 Results
--------------
+-------------------------------
 input.txt (from Advent of Code)
     Part 1: 355
     Part 2: 732978410442050
@@ -18,76 +18,82 @@ input.txt (from Advent of Code)
 input2.txt (from Samdesk)
     Part 1: 369
     Part 2: 761826581538190
+-------------------------------
 '''
 
 
-def solve_puzzle(patterns, designs, part_one):
+def find_counts_per_design(patterns, designs):
     '''
     Idea:
-    For each index in a design string, calculate how many possible valid pattern sequences there are up to that index
-    For example: if there are 3 valid ways to reach index i, then finding a valid 2-char pattern means there are 3 valid ways to
-        reach index i+2, and finding another valid 2-char pattern means there are 6 valid ways to reach index i+2
+    - For each index in a design string, calculate how many possible valid pattern sequences there are up to that index and store in memo
+    - For example: if there are 3 valid ways to reach index i, then finding a valid 2-char pattern starting at index i means there are 3 valid
+        ways to reach index i+2, and finding another valid 2-char pattern means there are 6 valid ways to reach index i+2
+    - Basically an iterative bottom-up dynamic programming approach
 
-    Basically an iterative bottom-up dynamic programming approach.
-
-    For part one, we can early-out once we've found a single possibility of reaching the end of a design sequence
-    For part two, we continue counting all possible configurations
+    For memo:
+    - 0-th index represents an empty string
+    - final index is result for full design string
+    
+    Returns a list of number of ways to make each design
     '''
     
-    total = 0
+    counts_per_design = []
     
     for design in designs:
         memo = [0 for i in range(len(design) + 1)]
         memo[0] = 1         # 1 way to have 0 chars
 
         for index in range(len(design)):
-            # Check pattern validity at index
-            # Update memo of corresponding index if pattern is valid
-
-            # Skip index if there are valid sequences to get there
+            # Skip index if there are no valid sequences to get there
             if memo[index] == 0:
                 continue
 
+            # Check pattern validity and update memo at corresponding index if valid
             for pattern in patterns:
                 if design.startswith(pattern, index):
                     memo[index + len(pattern)] += memo[index]
-                    
 
-        if part_one:
-            if memo[-1] > 0:
-                total += 1
-        else:
-            total += memo[-1]
+        counts_per_design.append(memo[-1])
 
-    return total
+    return counts_per_design
+
+
+def part_one(counts_per_design):
+    return sum([1 for count in counts_per_design if count > 0])
+
+
+def part_two(counts_per_design):
+    return sum(counts_per_design)
 
 
 def main():
-    #filename = "input_test.txt"
-    filename = "input.txt"
-    #filename = "input2.txt"
-    #filenames = {"input.txt, input2.txt"}
+    filenames = [
+        "input.txt",
+        "input2.txt"
+    ]
     
-    
-    # Process input file
-    with open(filename, "r") as file:
-        # First line is comma-separated list of available towels
-        line = file.readline()
-        patterns = [word.strip() for word in line.split(',')]
+    for filename in filenames:
+        with open(filename, "r") as file:
+            # First line is comma-separated list of patterns
+            line = file.readline()
+            patterns = [word.strip() for word in line.split(',')]
 
-        # Skip a line
-        file.readline()
+            # Skip a line
+            file.readline()
 
-        # Remaining lines are patterns
-        designs = []
-        for line in file:
-            designs.append(line.strip())
-    
-    result = solve_puzzle(patterns, designs, part_one=True)
-    print("Part 1 Result: " + str(result))
+            # Remaining lines are designs
+            designs = []
+            for line in file:
+                designs.append(line.strip())
+        
+        counts_per_design = find_counts_per_design(patterns, designs)
+        
+        result1 = part_one(counts_per_design)
+        result2 = part_two(counts_per_design)
 
-    result = solve_puzzle(patterns, designs, part_one=False)
-    print("Part 2 Result: " + str(result))
+        print(filename)
+        print("Part 1 Result: " + str(result1))
+        print("Part 2 Result: " + str(result2))
 
 
 if __name__ == "__main__":
